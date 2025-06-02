@@ -2,7 +2,7 @@ import aiohttp
 import json
 import datetime
 from api_key import key
-from telegram import Update, BotCommand
+from telegram import Update, BotCommand, ReplyKeyboardMarkup
 from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler, ConversationHandler, MessageHandler,
                           Application, filters)
 from bs4 import BeautifulSoup
@@ -50,7 +50,6 @@ async def launch(app: Application):
 
 @logger
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global reply
     commands = [
         BotCommand("start", "Show bot info"),
         BotCommand("breeds", "Show list of all available breeds"),
@@ -59,11 +58,13 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         BotCommand("reset_breed", "Reset breed to default")
     ]
     await context.bot.set_my_commands(commands)
+    keyboard = [["/random"]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     url = "https://dog.ceo/dog-api/"
     data = await fetch_data(url)
     http = BeautifulSoup(data, features="html.parser")
     title = http.find("h1", {"class": "title"}).get_text()
-    reply = await update.message.reply_text(f"{title}\nUse commands to get pictures of dogs")
+    reply = await update.message.reply_text(f"{title}\nUse commands to get pictures of dogs", reply_markup=reply_markup)
     context.user_data[f"{update.effective_chat.id}_bot_reply"] = reply.text
 
 
@@ -86,8 +87,10 @@ async def random_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @logger
 async def set_breed_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reply = await update.message.reply_text("Enter breed name:")
-    context.user_data[f"{update.effective_chat.id}_bot_reply"] = reply.text
+    chat_id = update.effective_chat.id
+    reply_markup = ReplyKeyboardMarkup([["/cancel"]], resize_keyboard=True)
+    reply = await update.message.reply_text("Enter breed name:", reply_markup=reply_markup)
+    context.user_data[f"{chat_id}_bot_reply"] = reply.text
     return BREED
 
 
@@ -136,6 +139,14 @@ async def reset_breed_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data[f"{chat_id}_bot_reply"] = reply.text
 
 
+@logger
+async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    reply_markup = ReplyKeyboardMarkup([["/random"]], resize_keyboard=True)
+    reply = await update.message.reply_text("Setting was cancelled", reply_markup=reply_markup)
+    context.user_data[f"{chat_id}_bot_reply"] = reply.text
+
+
 application = ApplicationBuilder().token(key).post_init(launch).build()
 start_handler = CommandHandler("start", start_command)
 breeds_handler = CommandHandler("breeds", breeds_command)
@@ -147,7 +158,7 @@ set_breed_handler = ConversationHandler(entry_points=[CommandHandler("set_breed"
                                             SUBBREED: [MessageHandler(filters.TEXT & ~filters.COMMAND, set_subbreed)],
                                             AGAIN: [CommandHandler("set_breed", set_breed_command)]
                                         },
-                                        fallbacks=[])
+                                        fallbacks=[CommandHandler("cancel", cancel_command)])
 reset_breed_handler = CommandHandler("reset_breed", reset_breed_command)
 application.add_handler(start_handler)
 application.add_handler(breeds_handler)
