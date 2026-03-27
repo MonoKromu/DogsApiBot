@@ -21,8 +21,21 @@ class Breed(Base):
     __tablename__ = "breed"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
-    main_image: Mapped[str]
     rus_name: Mapped[Optional[str]]
+    main_image: Mapped[str]
+    parent_breed_id: Mapped[Optional[int]] = mapped_column(ForeignKey("breed.id"))
+    parent_breed: Mapped[Optional["Breed"]] = relationship(back_populates="sub_breeds", remote_side=[id])
+    sub_breeds: Mapped[List["Breed"]] = relationship(back_populates="parent_breed",
+                                                     cascade="all, delete-orphan, save-update")
+
+    def __repr__(self) -> str:
+        return (
+            f"<Breed(id={self.id}, "
+            f"name='{self.name}', "
+            f"parent_breed_id={self.parent_breed_id}, "
+            f"sub_breeds_count={len(self.sub_breeds) if self.sub_breeds else 0})>"
+        )
+
 
 
 class User(Base):
