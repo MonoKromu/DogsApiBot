@@ -11,6 +11,8 @@ from config import config
 import api
 from db.init_breeds import init_breeds
 
+import routers.favorite_breeds
+
 bot = Bot(config.bot_token.get_secret_value())
 dp = Dispatcher()
 
@@ -40,6 +42,7 @@ async def random(message: Message):
         await message.answer_photo(photo=image)
 
 async def main():
+    dp.include_router(routers.favorite_breeds.router)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
