@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import DateTime, ForeignKey, Table, Column
+from sqlalchemy import DateTime, ForeignKey, Table, Column, exists
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -28,6 +29,22 @@ class Breed(Base):
     sub_breeds: Mapped[List["Breed"]] = relationship(back_populates="parent_breed",
                                                      cascade="all, delete-orphan, save-update")
 
+    @hybrid_property
+    def is_sub_breed(self):
+        return self.parent_breed_id is not None
+
+    @is_sub_breed.expression
+    def is_sub_breed(self):
+        return self.parent_breed_id.is_not(None)
+
+    @hybrid_property
+    def has_sub_breeds(self):
+        return len(self.sub_breeds) > 0 if self.sub_breeds is not None else False
+
+    @has_sub_breeds.expression
+    def has_sub_breeds(self):
+        return exists().where(Breed.parent_breed_id == self.id)
+
     def __repr__(self) -> str:
         return (
             f"<Breed(id={self.id}, "
@@ -35,7 +52,6 @@ class Breed(Base):
             f"parent_breed_id={self.parent_breed_id}, "
             f"sub_breeds_count={len(self.sub_breeds) if self.sub_breeds else 0})>"
         )
-
 
 
 class User(Base):
