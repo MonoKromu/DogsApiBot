@@ -20,13 +20,14 @@ async def init_breeds():
             if sub_breeds:
                 sub_breeds_images = [res.get("message") for res in
                                      await asyncio.gather(*[by_breed(f"{base_breed}/{breed}") for breed in sub_breeds])]
-                db_sub_breeds = [Breed(name=breed, main_image=image) for breed, image in
+                db_sub_breeds = [Breed(name=f"{base_breed.name}-{breed}", main_image=image) for breed, image in
                                  zip(sub_breeds, sub_breeds_images)]
                 base_breed.sub_breeds = db_sub_breeds
         session.add_all(db_base_breeds)
         session.commit()
+    return
 
 
 if __name__ == "__main__":
-    result = asyncio.run(init_breeds())
-    print(result)
+    asyncio.run(init_breeds())
+
