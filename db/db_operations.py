@@ -13,9 +13,11 @@ def get_breed(name: str, session: Session):
 def list_breeds(mode: Literal["main", "sub", "all"], session: Session, page=None, main_name=None):
     query = session.query(Breed)
     if mode == "main":
-        query.filter(~Breed.is_sub_breed)
+        query = query.filter(~Breed.is_sub_breed)
     elif mode == "sub":
-        query.filter(Breed.is_sub_breed)
+        query = query.filter(Breed.is_sub_breed)
+        if main_name:
+            query.filter(Breed.parent_breed.has(name=main_name))
 
     if page:
         page -= 1
