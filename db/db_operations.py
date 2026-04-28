@@ -10,12 +10,18 @@ def get_breed(name: str, session: Session):
     return breed
 
 
-def list_breeds(mode: Literal["main", "sub", "all"], session: Session):
+def list_breeds(mode: Literal["main", "sub", "all"], session: Session, page=None, main_name=None):
     query = session.query(Breed)
     if mode == "main":
         query.filter(~Breed.is_sub_breed)
     elif mode == "sub":
         query.filter(Breed.is_sub_breed)
+
+    if page:
+        page -= 1
+        query = query.offset(max(0, page * 10 - 1))
+        query = query.limit(10)
+
     breeds = query.all()
     return breeds
 
