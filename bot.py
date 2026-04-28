@@ -4,6 +4,7 @@ import sys
 from aiogram import Bot, Dispatcher, html
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
+from aiogram.fsm.storage.memory import SimpleEventIsolation
 from aiogram.types import Message, URLInputFile, KeyboardButton, ReplyKeyboardMarkup
 
 from config import config
@@ -12,9 +13,10 @@ import api
 from db.init_breeds import init_breeds
 
 import routers.favorite_breeds
+import routers.list_breeds
 
 bot = Bot(config.bot_token.get_secret_value())
-dp = Dispatcher()
+dp = Dispatcher(events_isolation=SimpleEventIsolation())
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -43,6 +45,7 @@ async def random(message: Message):
 
 async def main():
     dp.include_router(routers.favorite_breeds.router)
+    dp.include_router(routers.list_breeds.router)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
