@@ -100,7 +100,7 @@ async def turn_page(callback: CallbackQuery, callback_data: ListCallback):
             await callback.answer(text="Эта кнопка больше не активна", show_alert=True)
             return
         new_page = state.page + callback_data.action
-        if new_page < 0 or new_page > state.total_pages:
+        if new_page <= 0 or new_page > state.total_pages:
             await callback.answer()
             return
 
@@ -124,7 +124,7 @@ async def change_page(message: Message, command: CommandObject):
             await message.answer("Для использования команды введите номер страницы")
             return
         new_page = int(args)
-        if new_page < 0 or new_page > state.total_pages:
+        if new_page <= 0 or new_page > state.total_pages:
             await message.answer("Страницы с таким номером нет")
             return
         if new_page == state.page:
